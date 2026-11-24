@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — every pre-token protocol, ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">◎</span>
+      <span class="brand-name">TOKEN RADAR</span>
+      <span class="brand-sub">pre-token protocols, ranked by implied value</span>
+    </div>
+    <p class="meta" id="meta">Snapshot loading…</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="lede">
+    <h1>Which token launch is worth farming?</h1>
+    <p class="lede-text" id="lede">The radar scores every protocol in the snapshot that records no token and that the house's own rule calls a launch candidate, and ranks them by what its token would be worth if it traded at its own category's multiple. The watchlist is the floor: every slug on it is on the board. The early rows below it are the other candidates the radar exists to find — not wrapped, staked or bridged products of tokens that already trade, and not exchanges' own products.</p>
+    <dl class="facts" id="facts"></dl>
+  </section>
+
+  <section class="model-strip" aria-label="The model in one line">
+    <p class="formula">implied = TVL × <strong>category multiple</strong> × (1 + 7-day growth × 0.6) × maturity × breadth</p>
+    <p class="formula-note" id="formula-note">The category multiple is the TVL-weighted median market-cap-to-TVL of that category's already-trading tokens in this same snapshot, shrunk toward the global multiple (the plain median across all trading tokens). Nothing is hardcoded by name.</p>
+  </section>
+
+  <nav class="tabs" aria-label="Views">
+    <button type="button" class="tab active" data-view="board" aria-pressed="true">Pre-token board</button>
+    <button type="button" class="tab" data-view="live" aria-pressed="false">Live tokens</button>
+    <button type="button" class="tab" data-view="model" aria-pressed="false">Model &amp; method</button>
+  </nav>
+
+  <section id="view-board" class="view">
+    <div class="controls" role="search">
+      <label class="ctl">Search
+        <input id="q" type="search" placeholder="name or slug" autocomplete="off">
+      </label>
+      <label class="ctl">Category
+        <select id="category"><option value="">All categories</option></select>
+      </label>
+      <label class="ctl">Chain
+        <select id="chain"><option value="">All chains</option></select>
+      </label>
+      <label class="ctl">Min TVL
+        <select id="min-tvl">
+          <option value="0">Any TVL</option>
+          <option value="100000000">$100M+</option>
+          <option value="500000000">$500M+</option>
+          <option value="1000000000">$1B+</option>
+        </select>
+      </label>
+      <label class="ctl">Growth
+        <select id="growth">
+          <option value="">All</option>
+          <option value="gainers">Gainers (7d &gt; 0)</option>
+          <option value="decliners">Decliners (7d &lt; 0)</option>
+        </select>
+      </label>
+      <label class="ctl check"><input id="watchlist-only" type="checkbox"> Watchlist only</label>
+      <label class="ctl">Sort
+        <select id="sort">
+          <option value="implied">Implied value</option>
+          <option value="rank">Rank</option>
+          <option value="tvl">TVL</option>
+          <option value="growth">7-day growth</option>
+          <option value="age">Age</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+    </div>
+
+    <details class="sandbox" id="sandbox">
+      <summary>Model sandbox — change the weights, watch the board re-rank</summary>
+      <p class="sandbox-note">This is a what-if tool. The submitted board.json keeps the model as published above; the sandbox only re-ranks the page.</p>
+      <div class="sliders">
+        <label class="slider">Growth weight <output id="out-growth">0.60</output>
+          <input id="w-growth" type="range" min="0" max="1.5" step="0.05" value="0.6">
+        </label>
+        <label class="slider">Maturity floor <output id="out-maturity">0.65</output>
+          <input id="w-maturity" type="range" min="0" max="1" step="0.05" value="0.65">
+        </label>
+        <label class="slider">Breadth per extra chain <output id="out-breadth">0.04</output>
+          <input id="w-breadth" type="range" min="0" max="0.1" step="0.01" value="0.04">
+        </label>
+        <label class="slider">Multiple scale <output id="out-scale">1.00×</output>
+          <input id="w-scale" type="range" min="0.5" max="2" step="0.05" value="1">
+        </label>
+        <button type="button" class="reset" id="sandbox-reset">Reset to published model</button>
+      </div>
+    </details>
+
+    <p class="count" id="count"></p>
+    <div class="table-wrap">
+      <table id="board">
+        <thead>
+          <tr>
+            <th class="num">Rank</th>
+            <th>Protocol</th>
+            <th>Category</th>
+            <th>Chains</th>
+            <th class="num">TVL</th>
+            <th class="num">7d</th>
+            <th class="num">Age</th>
+            <th class="num">Implied value</th>
+          </tr>
+        </thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+    <p class="table-note">Click a row for the model breakdown and the farm plan. Implied values are estimates from the snapshot's own figures, not prices.</p>
+  </section>
+
+  <section id="view-live" class="view" hidden>
+    <h2>Live tokens — the market's own values</h2>
+    <p>These protocols already trade. The board never ranks them: their token is priced by the market, and their market-cap-to-TVL ratios are the comps the model reads. The top 24 by market cap are shown.</p>
+    <div class="table-wrap">
+      <table id="live">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Protocol</th>
+            <th>Category</th>
+            <th class="num">TVL</th>
+            <th class="num">Market cap</th>
+            <th class="num">Mcap / TVL</th>
+            <th class="num">7d</th>
+          </tr>
+        </thead>
+        <tbody id="live-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-model" class="view" hidden>
+    <h2>Model &amp; method</h2>
+    <p>The model has one idea: a token launch is worth what its category's tokens already trade at. Everything else is a correction to that idea.</p>
+    <h3>What counts as a launch candidate</h3>
+    <p>The house's own rule, from the competition's RULES.txt: a protocol that records no token, whose category is not Bridge, Canonical Bridge, Liquid Staking, Liquid Restaking, Restaked BTC or CEX, whose name does not end in a version marker, carries no whole word wrapped, staked or staking, and does not begin with an exchange's name (Binance, Coinbase, Bybit, Kraken, Bitget, OKX, Bitfinex, Gemini). That is why WBTC, Binance staked ETH and USDT0 are not on the board: each is a wrapped or staked product of a token that already trades, not a launch.</p>
+    <h3>The multiple, from the snapshot itself</h3>
+    <p>For each category, take the live-token protocols of that category in this snapshot, take the TVL-weighted median of their market-cap-to-TVL ratios, and shrink it toward the global multiple with a prior weight of 5. A category with no trading token takes the global multiple. The multiple is clamped to 0.05–0.50, so no single outlier category sets the board.</p>
+    <p>The median is weighted by TVL, not plain: a market-cap-to-TVL ratio falls as a protocol grows — a small bridge's token can trade at its TVL, a giant bridge's cannot — so a plain median over a category's tokens is set by its smallest members and overstates what a giant protocol's token would be worth. Weighting each comp by its TVL makes the multiple reflect how the market values TVL at the scale of the protocols being ranked. The global multiple, the prior and the fallback, is the plain median across all the snapshot's trading tokens: the typical token's multiple, not the TVL-weighted one, which the biggest protocols would drag down to the floor.</p>
+    <div class="table-wrap">
+      <table id="multiples">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="num">Trading tokens</th>
+            <th class="num">TVL-weighted median mcap / TVL</th>
+            <th class="num">Multiple used</th>
+          </tr>
+        </thead>
+        <tbody id="multiples-body"></tbody>
+      </table>
+    </div>
+    <h3>The three corrections</h3>
+    <ul class="method">
+      <li><strong>Growth.</strong> Seven-day TVL change, clamped to −60%…+120%, times a weight of 0.6. A protocol growing fast is worth more than one standing still at the same TVL.</li>
+      <li><strong>Maturity.</strong> 0.65 + 0.35 × min(age, 1095 days) / 1095. Age is the time since DefiLlama first listed the protocol: how long it has run with no token. A launch after three years of operation is worth more than one after three months — and the floor of 0.65 keeps young protocols on the board.</li>
+      <li><strong>Breadth.</strong> 1 + 0.04 per extra chain, up to five extra chains. A launch on more chains reaches more users.</li>
+    </ul>
+    <h3>The farm plan</h3>
+    <p>Every row carries a seven-step plan, derived from the protocol's own record: its category sets the two qualifying actions, its TVL sets the capital, its age sets the hold. Airdrops reward repeated, varied use, not a single deposit — so the plan asks for two different actions, a weekly action, and a hold of 30–60 days. Costs are gas plus the capital that stays in the position; nothing here asks you to pay to claim.</p>
+    <h3>What the board does not do</h3>
+    <ul class="method">
+      <li>It does not price a token that does not exist. Implied value is a ranking device, not a price target.</li>
+      <li>It does not rank wrapped, staked or bridged products of tokens that already trade, or exchanges' own products: the house's rule keeps them off the board, and versioned pools (a name ending in a release) are excluded as pools of another protocol.</li>
+      <li>It does not use any figure outside the snapshot. A future snapshot recomputes every multiple from its own figures.</li>
+    </ul>
+    <p class="caveat">Records no token is not the same as has no token. The snapshot is as of <span id="as-of">14 November 2026</span>; check the protocol's own pages before farming. This is a research tool, not financial advice.</p>
+  </section>
+</main>
+
+<dialog id="detail" aria-label="Protocol detail">
+  <div class="dialog-body" id="detail-body"></div>
+</dialog>
+
+<footer class="wrap foot">
+  <p>Token Radar · model radar-4 · snapshot 14 November 2026 · <span id="foot-note"></span></p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
